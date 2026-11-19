@@ -17,6 +17,7 @@ pub use calendar::{
     sun_apparent_longitude, LunarDate, SolarDate, SolarTerm,
 };
 pub use shensha::Shensha;
+pub use calendar::lunar_text as calendar_lunar_text;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BaziError(pub String);
