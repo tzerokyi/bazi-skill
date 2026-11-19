@@ -1,0 +1,6 @@
+/target/
+/.cargo/
+/.idea/
+/.vscode/
+*.exe
+*.pdb
