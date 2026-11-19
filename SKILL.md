@@ -21,16 +21,20 @@ description: >
 
 排盘和分析过程中，需要查阅以下参考文件获取详细规则和表格数据：
 
-- `scripts/pai_pan.py` — 排盘计算脚本（确认信息后必须先跑；四柱/大运/流年以脚本 stdout 为准）
+- `bazi chart` — Rust 排盘 CLI（确认信息后必须先运行；四柱/大运/流年以Rust CLI stdout 为准）
 - `references/wuxing-tables.md` — 五行、天干地支、十神、藏干等所有参考表
 - `references/shichen-table.md` — 时辰对照表、日上起时法（五鼠遁元）完整对照
 - `references/dayun-rules.md` — 大运顺逆排规则、起运年龄计算、流年分析规则
 - `references/shensha-table.md` — 神煞吉凶、查法与口诀（与脚本同一口径）
 - `references/classical-texts.md` — 九本经典典籍的核心论命规则摘要
 
-排盘计算时请先跑 `scripts/pai_pan.py`，再读取对应的参考文件做分析，不要口算或凭记忆中的万年历改四柱。
+排盘计算时请先跑 `bazi chart`，再读取对应的参考文件做分析，不要口算或凭记忆中的万年历改四柱。
 
 ---
+
+## Rust CLI 前置安装
+
+本仓库将原 Python 排盘脚本完整迁移为 Rust library + CLI。首次使用先执行 `cargo build --release --bin bazi`，在命令里使用 `target/release/bazi chart`（或者将 `bazi` 安装进 PATH）。程序不需要 Python、Web UI 或在线服务。可以添加 `--json` 获取稳定结构化数据，`--as-of YYYY` 固定流年分析终点。文化命理解读规则在 references/ 中，日期/四柱/神煞计算以 Rust API 为准。
 
 ## 第一阶段：信息收集
 
@@ -130,14 +134,14 @@ description: >
 
 ## 第二阶段：排盘计算
 
-用户确认信息后，**必须先跑**排盘脚本，四柱、大运、流年、子时、神煞均以脚本 stdout 为准。禁止口算、禁止查记忆中的万年历、禁止自行推日柱/月柱/大运后覆盖脚本结果。
+用户确认信息后，**必须先跑**Rust 排盘 CLI，四柱、大运、流年、子时、神煞均以Rust CLI stdout 为准。禁止口算、禁止查记忆中的万年历、禁止自行推日柱/月柱/大运后覆盖脚本结果。
 
 ```bash
-python3 scripts/pai_pan.py --solar 1990-05-15 --hour 12:00 --sex 男 --place 北京
-python3 scripts/pai_pan.py --solar 1990-05-15 --shichen 午 --sex 男
-python3 scripts/pai_pan.py --lunar 1990-04-21 --shichen 午 --sex 男
-python3 scripts/pai_pan.py --solar 1990-05-15 --sex 男
-python3 scripts/pai_pan.py --solar 1990-05-15 --hour 12:00 --sex 男 --deceased-year 2010
+bazi chart --solar 1990-05-15 --hour 12:00 --sex 男 --place 北京
+bazi chart --solar 1990-05-15 --shichen 午 --sex 男
+bazi chart --lunar 1990-04-21 --shichen 午 --sex 男
+bazi chart --solar 1990-05-15 --sex 男
+bazi chart --solar 1990-05-15 --hour 12:00 --sex 男 --deceased-year 2010
 ```
 
 ### 已收集字段 → CLI
@@ -154,15 +158,15 @@ python3 scripts/pai_pan.py --solar 1990-05-15 --hour 12:00 --sex 男 --deceased-
 | 出生地 | `--place …` | 可选；只用于展示和时辰边界警告 |
 | 已故年份 | `--deceased-year YYYY` | Step 8 为已故时必传；流年只列到该年 |
 
-阳历、农历至少要有一个。本机需要 `python3`，无 pip 依赖。
+阳历、农历至少要有一个。本机需要 Rust 构建的原生 `bazi` CLI，无 Python / pip 运行依赖。
 
 ### 使用 stdout
 
 把脚本打印的 `## 输入` / `## 四柱` / `## 大运` / `## 流年` / `## 神煞` / `## 警告` 原样作为排盘结果（可再排版，但干支、方向、起运、流年年份不得改）。
 
-- **节气交界 / 立春前后**：只看脚本 `## 警告`。出现「节气交界」或「立春前后」时，向用户说明临界，并严格采用脚本给出的那一套年柱/月柱。不要自己猜「可能有两种月柱」再当成一种用，也不要另算一套四柱。
+- **节气交界 / 立春前后**：只看脚本 `## 警告`。出现「节气交界」或「立春前后」时，向用户说明临界，并严格采用Rust CLI 给出的那一套年柱/月柱。不要自己猜「可能有两种月柱」再当成一种用，也不要另算一套四柱。
 - **夜子时 / 早子时**：以脚本「子时」字段为准（23:00 起用次日日柱）。
-- **神煞**：神煞以脚本为准，本阶段不要另算。
+- **神煞**：神煞以 Rust CLI 为准，本阶段不要另算。
 - 十神、藏干解释可对照 `references/wuxing-tables.md`；大运口诀对照 `references/dayun-rules.md`。解释必须服从脚本数字，不能反过来改盘。
 
 ---
@@ -182,9 +186,9 @@ python3 scripts/pai_pan.py --solar 1990-05-15 --hour 12:00 --sex 男 --deceased-
 - 十神与六亲关系（参考渊海子平）
 
 ### 神煞
-- 以脚本 `## 神煞` 为准，只解释脚本已列出的条目，不要补算未列出的神煞
+- 以脚本 `## 神煞` 为准，只解释Rust CLI 已列出的条目，不要补算未列出的神煞
 - 解释时读 `references/shensha-table.md`（与脚本同一口径）
-- 禁止只报天乙、驿马、桃花等三两个常见神煞；脚本列出的吉神凶煞都要交代
+- 禁止只报天乙、驿马、桃花等三两个常见神煞；Rust CLI 列出的吉神凶煞都要交代
 - 禁止未跑脚本就上网或用浏览器现查神煞
 
 ### 3. 五行平衡
