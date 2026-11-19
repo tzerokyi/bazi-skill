@@ -94,8 +94,16 @@ fn date_option(args:&Args,key:&str) -> Result<Option<SolarDate>,BaziError> {
     args.value(key).map(SolarDate::parse).transpose()
 }
 fn lunar_option(args:&Args)->Result<Option<LunarDate>,BaziError> {
-    let Some(d)=date_option(args,"lunar")? else { return Ok(None); };
-    Ok(Some(LunarDate{year:d.year,month:d.month,day:d.day,leap:args.has("leap")}))
+    let Some(value)=args.value("lunar") else {return Ok(None);};
+    let parts:Vec<_>=value.split('-').collect();
+    if parts.len()!=3 {return Err(BaziError("--lunar requires YYYY-MM-DD".into()));}
+    let year=parts[0].parse::<i32>().map_err(|_|BaziError("invalid lunar year".into()))?;
+    let month=parts[1].parse::<u8>().map_err(|_|BaziError("invalid lunar month".into()))?;
+    let day=parts[2].parse::<u8>().map_err(|_|BaziError("invalid lunar day".into()))?;
+    if !(1900..=2100).contains(&year) || !(1..=12).contains(&month) || !(1..=30).contains(&day) {
+        return Err(BaziError("lunar date outside 1900-2100, months 1-12, days 1-30".into()));
+    }
+    Ok(Some(LunarDate{year,month,day,leap:args.has("leap")}))
 }
 fn parse_year(args:&Args,key:&str)->Result<Option<i32>,BaziError> {
     args.value(key).map(|s|s.parse::<i32>().map_err(|_|BaziError(
