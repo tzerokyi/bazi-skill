@@ -51,7 +51,9 @@ fn parse() -> Result<Args,BaziError> {
     let first=argv.next().unwrap_or_else(||"--help".into());
     let mut args=Args {
         command:match first.as_str() {
-            "chart"|"convert"|"terms"=>first,
+            "chart" => "chart".into(),
+            "convert" => "convert".into(),
+            "terms" => "terms".into(),
             "--help"|"-h"|"help"=>"help".into(),
             "--version"|"-V"|"version"=>"version".into(),
             x if x.starts_with("--")=>return Err(BaziError(
