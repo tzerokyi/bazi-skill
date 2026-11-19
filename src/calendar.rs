@@ -70,7 +70,7 @@ impl SolarDate {
     /// Julian day in UTC from Beijing clock time.
     pub(crate) fn beijing_jd(self, hour: u8, minute: u8) -> f64 {
         f64::from(self.jdn()) - 0.5 + f64::from(hour) / 24.0
-            + f64::from(minute) / 1440.0 - 8.0 / 24.0
+            + f64::from(minute) / 1440.0 
     }
 }
 impl fmt::Display for SolarDate {
