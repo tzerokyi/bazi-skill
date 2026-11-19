@@ -1,0 +1,58 @@
+name: Native Rust core
+on:
+  push:
+    branches:
+      - feat/native-rust-core
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bazi-native-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name != 'pull_request'
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: "12"
+      CARGO_TARGET_DIR: ${{ github.workspace }}/../.cargo-target-bazi
+    steps:
+      - name: Checkout trusted repository branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Toolchain preflight
+        run: |
+          rustc --version
+          cargo --version
+          cargo clippy --version
+          cargo fmt --version
+      - name: Format and ensure committed bytes match rustfmt
+        run: |
+          cargo fmt --all
+          git diff -- src tests
+          git diff --exit-code -- src tests
+      - name: Strict Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Rust unit and binary integration tests
+        run: cargo test --workspace
+      - name: Build native CLI
+        run: cargo build --release --bin bazi
+      - name: Exercise compiled CLI and structured API
+        shell: bash
+        run: |
+          set -euo pipefail
+          CLI="${CARGO_TARGET_DIR}/release/bazi"
+          "$CLI" --version
+          "$CLI" chart --solar 1990-05-15 --shichen 午 --sex 男 --as-of 2026 --json | grep -q '"stem": "庚"'
+          "$CLI" convert --lunar 1990-04-21 --json | grep -q '"day": 15'
+          "$CLI" terms --year 1990 --json | grep -q '"name": "立春"'
+          if "$CLI" chart --solar 1990-05-15 --sex 男 --hour 25:00 >/dev/null 2>&1; then
+            echo "expected invalid clock to fail" >&2
+            exit 1
+          fi
